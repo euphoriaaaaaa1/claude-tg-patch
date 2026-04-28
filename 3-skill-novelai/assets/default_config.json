@@ -8,7 +8,7 @@
   "sampler": "k_euler_ancestral",
   "seed": -1,
   "prompt_max_tokens": 512,
-  "nsfw_prefix": "nsfw",
+  "nsfw_prefix": "",
   "positive_prefix": "5::best quality, masterpiece, very aesthetic, detailed, absurdres::, year 2025",
   "negative_prefix": "lowres, worst quality, low quality, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, watermark, signature, jpeg artifacts, blurry, cropped, mutation, deformed, extra limbs, fused fingers, malformed hands, ugly, error, text, logo, username, artist name, scan artifacts, monochrome, grayscale, simple_background, 2koma, border",
   "novelai_parameters": {

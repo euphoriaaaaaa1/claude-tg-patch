@@ -30,7 +30,6 @@ compatibility:
 ## 强制规则
 先记住这几条短规则：
 - `prompt` 主体必须使用英文提示词，禁止使用中文；英文提示词必须按要求写入 `intermediate.json`
-- NSFW 场景必须带 `nsfw,`前缀
 - 只写正面主体，不要重复固定正面前缀
 - 不要写负面提示词，负面提示词由配置自动拼接
 - 不得绕过固定正面前缀和固定负面前缀
@@ -94,7 +93,6 @@ compatibility:
 ### 基本约束
 - `max_tokens`: `512`
 - `tag_separator`: `,`
-- NSFW 场景前缀：`nsfw,`
 
 ### 基本要求
 - 标签必须和这一次的具体人物、动作、场景、镜头贴合
@@ -104,7 +102,6 @@ compatibility:
 - 只写一个瞬间，不写连续过程，不写“接下来”“然后”“正在一步步”
 - 只写正面内容，不写负面词
 - 不要把固定正面前缀里的内容重复抄一遍
-- 如果是 NSFW 场景，`prompt` 主体里必须显式出现 `nsfw,`
 
 ### 权重规则
 - 可用范围：`0.5 - 3`
@@ -161,10 +158,10 @@ compatibility:
 - `Medium shot`
 
 角色动作示例：
-- `girl riding boy`
-- `boy carrying girl`
-- `two girls performing fellatio`
-- `girl lifting skirt`
+- `girl waving at boy`
+- `boy carrying girl on shoulders`
+- `two girls holding hands`
+- `girl twirling skirt`
 
 场景示例：
 - `in bedroom`
@@ -227,46 +224,42 @@ compatibility:
 高权重外貌示例：
 - `2::long_silver_hair::`
 - `1.8::blue_eyes::`
-- `1.3::curvy::`
-- `1.55::small_breasts::`
-- `large_breasts`
-- `2::matured female::`
+- `1.3::slim_figure::`
+- `1.5::petite_build::`
+- `2::matured_female::`
 - `1.5::teenager::`
 
 服装示例：
 - `1.8::china_dress::`
-- `black_lingerie`
 - `military_uniform`
 - `sailor_collar`
-- `lace`
-- `microskirt`
+- `lace_collar`
+- `pleated_skirt`
 - `hoodie`
-- `wet_clothes`
-- `torn_clothes`
-- `clothes_lift`
+- `casual_wear`
+- `formal_dress`
+- `school_uniform`
 
 表情和动作示例：
 - `1.2::smiling::`
 - `blushing`
-- `1.4::lustful_expression::`
+- `1.4::confident_expression::`
 - `embarrassed`
 - `standing`
 - `sitting`
 - `kneeling`
-- `lying`
-- `on_back`
-- `straddling`
-- `1.8::riding::`
+- `walking`
+- `running`
 - `hands_on_own_chest`
 - `arms_behind_back`
 - `hands_on_lap`
 - `covering_own_mouth`
-- `1.4::hands_between_legs::`
+- `looking_at_viewer`
 
 环境交互示例：
-- `sitting_on_bed`
+- `sitting_on_bench`
 - `sitting_in_tree`
-- `2.5::spread_legs::`
+- `1.5::dynamic_pose::`
 - `lotus_position`
 
 角色互动写法：
@@ -276,7 +269,7 @@ compatibility:
 
 示例：
 - `2.0::source#princess carry::`
-- `2.0::target#vaginal_penetration::`
+- `2.0::target#held in arms::`
 - `mutual#kissing`
 - `mutual#hugging`
 
@@ -284,7 +277,7 @@ compatibility:
 ### Prompt 顺序
 每个 prompt 推荐按这个顺序组织：
 1. 画面简述
-2. NSFW 前缀（如适用）
+2. 内容评级前缀（如适用，由 nsfw_prefix 字段控制，默认无）
 3. 人物总数标签
 4. 角色识别
 5. 风格标签
@@ -358,7 +351,7 @@ compatibility:
 | 用户说 | mode | --reuse-seed | 行为 |
 |---|---|---|---|
 | 第一次开新场景（"在床上自拍"） | `new` | ❌ 不传 | 新 seed，从头建场景 |
-| "再来一张" / "换个表情" / "换个角度" / "换个动作" / "脱了" / "腿张开" | `revise` | ✅ **必传** | 同 seed，沿用环境，仅改局部 |
+| "再来一张" / "换个表情" / "换个角度" / "换个动作" / "靠近一点" | `revise` | ✅ **必传** | 同 seed，沿用环境，仅改局部 |
 | "去客厅" / "换个房间" / "出门" / "换衣服" / 任何场景跳变 | `new` | ❌ 不传 | 新 seed，新场景 |
 | "再拍同样姿势但拉远" | `revise` | ✅ 必传 | 改 ratio 不改 seed |
 | "重做一张更骚的" / 用户对刚才那张不满意 | `revise` | ✅ 必传 | 锁同 seed 微调 |
@@ -372,7 +365,7 @@ compatibility:
 
 **同场景续图（mode=revise）**：只写要改的部分，环境会自动从上次沿用。
 ```json
-{ "mode": "revise", "revision_instruction": "spread legs, lift skirt" }
+{ "mode": "revise", "revision_instruction": "looking back over shoulder, hand near hair" }
 ```
 
 **强提醒**：用户说"再来一张"99% 是同场景。默认就该 `mode=revise + --reuse-seed`，除非显式判断他要换场景。

@@ -26,7 +26,7 @@
 - **入站**：用户发 Telegram voice → 自动用 SenseVoice 转写成中文（带情绪标签）→ 当文字给 claude
 - **出站**：claude 调 reply 时多传一个 `as_voice=true` → 用 Fish Audio S2 合成成语音 → 发回 Telegram
 
-支持段落分多条语音、行内情绪标签（`[娇喘地]` `[叹气]` 等）、双语模式（中文文字气泡 + 日文语音气泡）。
+支持段落分多条语音、行内情绪标签（`[温柔地]` `[叹气]` 等）、双语模式（中文文字气泡 + 日文语音气泡）。
 
 ### 3. [NovelAI Skill](./3-skill-novelai/) — 让 claude 生图发图
 

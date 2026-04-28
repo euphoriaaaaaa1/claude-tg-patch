@@ -18,36 +18,13 @@ DEFAULT_REVISION_INSTRUCTION = (
     "different camera angle, different viewpoint, different composition, "
     "keep same character, same outfit, same scene, same lighting"
 )
-NSFW_KEYWORDS = (
-    "nsfw",
-    "nude",
-    "naked",
-    "nipples",
-    "breasts",
-    "cleavage",
-    "pussy",
-    "penis",
-    "vaginal",
-    "fellatio",
-    "cum",
-    "orgasm",
-    "自慰",
-    "裸体",
-    "裸",
-    "乳头",
-    "胸",
-    "阴部",
-    "阴蒂",
-    "阴唇",
-    "肉棒",
-    "鸡巴",
-    "插入",
-    "口交",
-    "做爱",
-    "性交",
-    "骚",
-    "发情",
-)
+# Adult-content keyword auto-detector — empty by default.
+# If you want auto-detection of explicit content (so the script auto-prepends
+# `nsfw_prefix` from default_config.json), fill this tuple yourself, e.g.:
+#     NSFW_KEYWORDS = ("nsfw", "explicit", ...)
+# Without keywords here, the only way to trigger the nsfw prefix is to set
+# `"nsfw": true` (or `"rating": "nsfw"`) explicitly in intermediate.json.
+NSFW_KEYWORDS: tuple[str, ...] = ()
 
 
 def load_json(path: Path) -> dict[str, Any]:

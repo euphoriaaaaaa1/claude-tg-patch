@@ -75,7 +75,7 @@ NOVELAI_BEARER_TOKEN=pst-xxxxxxxxxxxxxxxx     # 上面拿到的那串
 
 ## 调风格（可选但强烈建议）
 
-`assets/default_config.json` 的 `positive_prefix` 现在是**裸的**质量词，出图风格寡淡。要好看必须加自己的：
+`assets/default_config.json` 的 `positive_prefix` 现在只有**基础**质量词，出图风格寡淡。要好看必须自己加：
 
 打开 `~/.claude/skills/novelai-skill/assets/default_config.json`，修改：
 
@@ -126,7 +126,7 @@ intermediate.json 长这样：
 ```json
 {
   "mode": "revise",
-  "revision_instruction": "spread legs slightly, lift skirt"
+  "revision_instruction": "different angle, looking at camera, smiling"
 }
 ```
 环境会自动从上一次沿用，只改你写的部分。
