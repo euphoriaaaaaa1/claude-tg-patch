@@ -49,15 +49,9 @@ Claude CLI 在启动时自动扫描 `~/.claude/skills/` 目录，无需额外注
 
 ### 配置 bot 调用
 
-在 bot 的 `CLAUDE.md` 末尾追加调用规则：
+通过项目根目录 `install.sh` 安装时本步骤已自动完成（注入 [`CLAUDE-snippet.md`](./CLAUDE-snippet.md) 至 `~/.claude/<bot>/CLAUDE.md`）。
 
-```markdown
-## 发图
-- 用户表达获取图像意图时，调用 ~/.claude/skills/novelai-skill 完成生成
-- 必须传入 --ratio：自拍/全身使用 portrait；远景/录像使用 landscape；特写使用 square
-- 续图请求（"再来一张"、"换个动作"等）必须传入 --reuse-seed，并在 intermediate.json 中设 mode=revise
-- 生成成功后仅发送图像与 1 至 2 句简短回复，不以文字描述代替图像
-```
+如选择手动安装，将 `CLAUDE-snippet.md` 整段内容追加至 bot 的 `CLAUDE.md` 末尾即可。其内容包含调用约束、`--ratio` 选择规则、续图触发条件等。
 
 Windows 路径替换为 `%USERPROFILE%\.claude\skills\novelai-skill`，命令使用 `python` 而非 `python3`。
 

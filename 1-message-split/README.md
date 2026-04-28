@@ -61,11 +61,9 @@ python 1-message-split\apply.py "$env:USERPROFILE\.claude\plugins\marketplaces\c
 
 ### 第三步：补充 prompt 规则
 
-在 bot 的 `CLAUDE.md` 末尾追加以下内容，约束 claude 的回复格式：
+通过项目根目录 `install.sh` 安装时本步骤已自动完成（注入 `CLAUDE-snippet.md` 至 `~/.claude/<bot>/CLAUDE.md`）。
 
-```markdown
-回复以空行分段，每段不超过 30 字，单次最多 3 至 5 段，使用一次 reply 调用完成。
-```
+如选择手动安装，将 [`CLAUDE-snippet.md`](./CLAUDE-snippet.md) 整段内容追加至 bot 的 `CLAUDE.md` 末尾即可。其内容约束 claude 的回复格式（空行分段、段落数量与长度限制等）。
 
 完成后重启 bot 使配置生效。
 

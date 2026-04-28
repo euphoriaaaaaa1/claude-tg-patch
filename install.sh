@@ -40,6 +40,22 @@ warn() { printf "\033[1;33m⚠ %s\033[0m\n" "$*"; }
 ok() { printf "\033[1;32m✓ %s\033[0m\n" "$*"; }
 fail() { printf "\033[1;31m✗ %s\033[0m\n" "$*"; exit 1; }
 
+# 把 snippet 文件按 marker 幂等注入 CLAUDE.md。
+# 已存在该 marker 区段则先删旧后追加新；不存在则直接追加。需要 perl（macOS / Linux 自带）。
+inject_snippet() {
+  local snippet="$1" target="$2" marker="$3"
+  [ ! -f "$snippet" ] && return
+  [ ! -f "$target" ] && { warn "$target 不存在，跳过 $marker 注入"; return; }
+  # 先删旧 marker 段（含前后多余空行），再 append 新内容
+  if grep -q "$marker-START" "$target"; then
+    perl -i -0pe "s/\n*<!-- $marker-START.*?<!-- $marker-END -->\n*/\n/gs" "$target"
+  fi
+  # 确保文件末尾有且仅有一个换行
+  perl -i -0pe 's/\n*\z/\n/' "$target"
+  printf '\n' >> "$target"
+  cat "$snippet" >> "$target"
+}
+
 # 校验
 [ -z "$BOT_NAME" ] && fail "BOT_NAME 必填（你 bot 在 ~/.claude/ 下的目录名）"
 [ ! -f "$TELEGRAM_PLUGIN_DIR/server.ts" ] && \
@@ -52,6 +68,10 @@ if [ "$INSTALL_MESSAGE_SPLIT" = true ]; then
   say "[1/3] message-split"
   python3 "$REPO_DIR/1-message-split/apply.py" "$TELEGRAM_PLUGIN_DIR/server.ts"
   ok "patch 已应用到 telegram plugin"
+  if [ -f "$BOT_DIR/CLAUDE.md" ]; then
+    inject_snippet "$REPO_DIR/1-message-split/CLAUDE-snippet.md" "$BOT_DIR/CLAUDE.md" "MESSAGE-SPLIT"
+    ok "分段规则已注入 $BOT_DIR/CLAUDE.md"
+  fi
 fi
 
 # ─── 模块 3: novelai-skill ──────────────────────────────────────────────
@@ -66,6 +86,10 @@ NOVELAI_BEARER_TOKEN=$NOVELAI_TOKEN
 EOF
   chmod 600 "$HOME/.claude/skills/novelai-skill/.env.local"
   ok "skill 装到 ~/.claude/skills/novelai-skill"
+  if [ -f "$BOT_DIR/CLAUDE.md" ]; then
+    inject_snippet "$REPO_DIR/3-skill-novelai/CLAUDE-snippet.md" "$BOT_DIR/CLAUDE.md" "NOVELAI-SKILL"
+    ok "发图规则已注入 $BOT_DIR/CLAUDE.md"
+  fi
 fi
 
 # ─── 模块 2: voice-bridge ──────────────────────────────────────────────
@@ -126,10 +150,9 @@ EOF
    }
 EOF
   echo ""
-  echo "3. 在 $BOT_DIR/CLAUDE.md 末尾加发图规则（让 claude 用 novelai-skill）："
-  echo "   见 ~/.claude/skills/novelai-skill/README.md '让 bot 知道用这个 skill' 段"
+  echo "3. 重启你的 bot（kill tmux session 让 dispatcher / claude 重新拉起）"
   echo ""
-  echo "4. 重启你的 bot（kill tmux session 让 dispatcher / claude 重新拉起）"
+  echo "（CLAUDE.md 中的分段规则与发图规则已自动注入；voice-bridge 提示词由 sync_snippet.py 处理）"
 fi
 
 echo ""
