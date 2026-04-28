@@ -1,46 +1,91 @@
 # 2. Voice Bridge
 
-让 bot 能听语音、能发语音。
+# 简介
 
-## 干啥的
+## 功能说明
 
-两件事：
+提供 Telegram bot 与语音消息之间的双向桥接，包含两个独立的能力。
 
-**听语音**：用户在 Telegram 给 bot 发 voice message，server 后台调本地 SenseVoice 模型转写成中文（带情绪标签），claude 看到的就是普通文字加一句情绪元数据。
+**入站方向**。用户在 Telegram 发送 voice message 时，server 调用本地部署的 SenseVoice 模型完成转写，结果包含中文文本与情绪标签（HAPPY、SAD、ANGRY 等）。claude 收到的输入为普通文本，附带情绪元数据。
 
-**发语音**：claude 在 reply 里多传一个 `as_voice: true`，server 把文本送到 Fish Audio S2 合成 mp3，再用 Telegram sendVoice 发出去。支持行内情绪标签（`今天好累呀。[叹气] 但看到你就好了。`）和双语模式（中文文字气泡 + 日文语音气泡）。
+**出站方向**。claude 调用 reply 工具时附加 `as_voice: true` 参数后，server 将文本送至 Fish Audio S2 接口合成 mp3，再调用 Telegram sendVoice 发送。支持以下能力：
 
-跟 message-split 配合用，每段都能变成独立的语音消息。
+- 段落拆分：与 [1-message-split](../1-message-split) 配合使用时，每段文本对应一条独立语音
+- 行内情绪标签：在文本中嵌入 `[叹气]`、`[温柔地]` 等标记，由 Fish S2 解析
+- 双语模式：同一回复中同时包含中文文字气泡与日文（或其他语言）语音气泡
 
-## API key 在哪拿
+## 架构概览
 
-**Fish Audio**：去 fish.audio 注册，充几刀，右上角 API 生成 key。S2 按字符算钱，1 万字符约 $0.5，先充 $5 够用很久。音色去主页 voice library 试听挑一个，详情页 URL `https://fish.audio/m/<这一段就是 voice_id>`。
+```
+Telegram → 官方 telegram plugin → claude (worker)
+                                       │
+                       ┌───────────────┴────────────────┐
+                       ▼                                ▼
+              MCP voice-bridge                 reply(as_voice=true)
+                       │                                │
+                       └────────────┐    ┌──────────────┘
+                                    ▼    ▼
+                              server_http.py (FastAPI, 7788)
+                                    │
+                       ┌────────────┴────────────┐
+                       ▼                         ▼
+              SenseVoice (本地)           Fish Audio (远端)
+              语音转文字                   文字转语音
+```
 
-**Telegram bot token**：你已经在跑官方 plugin 的话直接复用现成的；没有的话 Telegram 找 @BotFather 走 `/newbot`。
+`server_http.py` 常驻于本机 7788 端口，多个 bot 可共享同一个实例，从而共用 SenseVoice 模型避免重复加载。
 
-## 装（mac / Linux）
+# 安装
+
+## 凭证准备
+
+**Fish Audio API key**。在 [fish.audio](https://fish.audio) 注册并完成充值，S2 模型按字符计费。在右上角菜单进入 API 页面生成 key。
+
+**Fish Audio 音色 id**。在主页 voice library 试听并选定音色，详情页 URL 形如 `https://fish.audio/m/<音色 id>`，末段即为所需值。
+
+**Telegram bot token**。沿用官方 telegram plugin 已有的 token，或通过 [@BotFather](https://t.me/BotFather) 新建。
+
+## 操作步骤（macOS / Linux）
+
+### 第一步：创建 Python 虚拟环境
 
 ```bash
 cd 2-voice-bridge
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt    # torch + funasr 比较重，慢
-
-cp .env.example .env
-# 编辑 .env 填 FISH_AUDIO_API_KEY 和 TELEGRAM_BOT_TOKEN
-
-chmod +x start.sh
-./start.sh start                              # 第一次启动会下 SenseVoice 模型 ~1GB
-curl http://127.0.0.1:7788/health             # 应回 {"ok": true, ...}
+.venv/bin/pip install -r requirements.txt
 ```
 
-然后给官方 telegram plugin 打补丁，加 `as_voice` 等参数：
+依赖包含 torch 与 funasr，体积较大，初次安装耗时较长。
+
+### 第二步：写入配置
+
+```bash
+cp .env.example .env
+# 编辑 .env，填入 FISH_AUDIO_API_KEY 与 TELEGRAM_BOT_TOKEN
+```
+
+### 第三步：启动服务
+
+```bash
+chmod +x start.sh
+./start.sh start
+curl http://127.0.0.1:7788/health   # 应返回 {"ok": true, ...}
+```
+
+首次启动会从 ModelScope 下载 SenseVoice 模型至本地 `models/` 目录，体积约 1GB。如需走代理可在 `.env` 中设置 `HTTPS_PROXY`。
+
+### 第四步：为 telegram plugin 应用补丁
 
 ```bash
 .venv/bin/python apply_patch.py \
   ~/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/telegram/server.ts
 ```
 
-把 voice-bridge 注册进 bot 的 `.mcp.json`（每个 bot 一份）。JSON 不认 `~`，得写绝对路径：
+补丁为 reply 工具新增 `as_voice`、`voice_emotion`、`voice_instruct` 三个参数。
+
+### 第五步：注册 MCP server 至 bot
+
+将 `mcp-snippet.json` 中的 `voice-bridge` 段合并入 bot 的 `.mcp.json`。由于 JSON 不支持 `~` 路径展开，必须填写绝对路径：
 
 ```json
 {
@@ -54,23 +99,25 @@ curl http://127.0.0.1:7788/health             # 应回 {"ok": true, ...}
 }
 ```
 
-bot 的 access.json 加 `voiceId`：
+### 第六步：在 access.json 中指定音色
 
 ```json
-{ "voiceId": "你在 fish.audio 选的音色 id" }
+{ "voiceId": "在 fish.audio 选取的音色 id" }
 ```
 
-让 claude 知道何时用语音：
+未设置该字段时，`as_voice=true` 将被忽略并降级为文字回复。
+
+### 第七步：同步 prompt 模板
 
 ```bash
 .venv/bin/python sync_snippet.py ~/.claude/<bot 名>/CLAUDE.md
 ```
 
-会自动追加两段说明（用 HTML 注释包起来，可以反复跑覆盖更新），告诉 claude 什么时候该 `as_voice=true`、情绪标签怎么用、群聊里怎么收敛。
+将 voice-bridge 相关的提示词追加至 bot 的 CLAUDE.md（以 HTML 注释包裹，可重复执行覆盖更新）。
 
-重启 bot，发语音消息试。
+完成后重启 bot。
 
-## 装（Windows PowerShell）
+## 操作步骤（Windows PowerShell）
 
 ```powershell
 cd 2-voice-bridge
@@ -80,34 +127,38 @@ python -m venv .venv
 copy .env.example .env
 notepad .env
 
-# 没有 start.sh，前台跑（或者用 Start-Process 后台）
+# Windows 不使用 start.sh，直接前台运行（或以 Start-Process 后台运行）
 .venv\Scripts\python.exe server_http.py
 ```
 
-补丁脚本和 sync_snippet 一样跑：
+补丁与 snippet 同步：
 
 ```powershell
 .venv\Scripts\python.exe apply_patch.py "$env:USERPROFILE\.claude\plugins\marketplaces\claude-plugins-official\external_plugins\telegram\server.ts"
 .venv\Scripts\python.exe sync_snippet.py "$env:USERPROFILE\.claude\<bot 名>\CLAUDE.md"
 ```
 
-`mcp-snippet.json` 路径换成 Windows 绝对路径（注意双反斜杠）：
+`mcp-snippet.json` 中路径改为 Windows 绝对路径形式（注意双反斜杠）：
 
 ```json
 "command": "C:\\Users\\yourname\\claude-tg-patch\\2-voice-bridge\\.venv\\Scripts\\python.exe",
 "args": ["C:\\Users\\yourname\\claude-tg-patch\\2-voice-bridge\\server.py"]
 ```
 
-## 调用例子
+# 使用
+
+## 调用方式
+
+claude 通过 reply 工具的扩展参数控制语音输出。
 
 ```json
-// 普通语音
+// 单一语音消息
 { "chat_id": "...", "text": "今天好累呀。", "as_voice": true }
 
-// 带情绪
+// 携带情绪标签
 { "chat_id": "...", "text": "[叹气] 又加班。", "as_voice": true, "voice_emotion": "SAD" }
 
-// 双语：中文文字 + 日文语音
+// 双语模式：text 显示为中文文字气泡，voice_text 朗读为日文语音
 {
   "chat_id": "...",
   "text": "今天好累呀。",
@@ -116,16 +167,20 @@ notepad .env
 }
 ```
 
-bot 的 CLAUDE.md 已经被 sync_snippet 注入了规则，多数情况下 claude 自己会判断。手动控制看 `CLAUDE-voice-reply-snippet.md`。
+`sync_snippet.py` 已将上述用法的判断规则注入 CLAUDE.md，多数情况下 claude 自行判断使用文字或语音回复。完整规范见 [CLAUDE-voice-reply-snippet.md](./CLAUDE-voice-reply-snippet.md)。
 
-## 不工作怎么办
+## 故障排查
 
-`start.sh: Permission denied` → `chmod +x start.sh`。
+**`start.sh: Permission denied`**。执行 `chmod +x start.sh` 赋予执行权限。
 
-`.venv/bin/python: No such file` → 没建 venv。
+**`.venv/bin/python: No such file`**。虚拟环境未创建，重新执行第一步。
 
-`/health` 不通 → 看 `logs/http_server.out`，多半是 funasr 模型还在下或下载失败。墙内可以加 `HTTPS_PROXY` 走代理，或者从 ModelScope 手动下到 `models/`。
+**`/health` 接口不响应**。查看 `logs/http_server.out`，多数情况下是 SenseVoice 模型下载尚未完成或下载失败。可在 `.env` 中设置 `HTTPS_PROXY` 走代理，或从 ModelScope 手动下载至 `models/` 目录。
 
-`as_voice=true` 没反应 → access.json 没 voiceId / .mcp.json 没注册 voice-bridge / bot 没重启。
+**`as_voice=true` 不生效**。确认 access.json 中的 `voiceId`、`.mcp.json` 中的 voice-bridge 注册项均已配置，并已重启 bot。
 
-`apply_patch.py` 跑完语音功能没动 → 上游 plugin 升级了，可能要手改 patch 里的 selector。
+**`apply_patch.py` 执行后语音功能无变化**。可能上游 plugin 已升级且字符串选择器失效，需手动调整补丁。
+
+# 开源协议
+
+本模块作为 [Claude TG Patch](../) 的一部分发布，采用 [MIT License](../LICENSE)。

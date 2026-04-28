@@ -1,18 +1,20 @@
 # 1. Message Split
 
-让 bot 一次回复发多条短消息，不要一整段堆在一起。
+# 简介
 
-## 干啥的
+## 功能说明
 
-官方 telegram plugin 默认是 claude 写啥就一条消息发啥，长得像 chatbot。打这个 patch 之后，claude 在 reply 里用空行分段，server 自动拆成多条独立 Telegram 消息逐条发，中间还能插"对方正在输入..."。
+为官方 telegram plugin 的 reply 工具增加段落分发能力。打补丁后，claude 在文本中以空行（`\n\n`）分隔的多个段落，会被 server 拆分为多条独立的 Telegram 消息逐条发出。两条消息之间可设置等待间隔，期间向用户显示"对方正在输入..."状态，使对话节奏更接近真人。
 
-效果对比：原本
+## 行为对比
+
+未启用：
 
 ```
 [bot] 哦你来啦我刚还在想你呢今天怎么样
 ```
 
-变成
+启用后（每段独立消息，段间停顿可配置）：
 
 ```
 [bot] 哦
@@ -21,26 +23,32 @@
 [bot] 今天怎么样
 ```
 
-聊起来人味浓很多。
+# 安装
 
-## 装
+## 前置条件
 
-两步。先把官方 plugin 跑通了再来。
+需先完成官方 telegram plugin 的部署并确认其能够正常收发文本消息。
 
-**第一步**：跑 patch
+## 操作步骤
+
+### 第一步：应用补丁
+
+`apply.py` 通过字符串匹配修改 telegram plugin 的 `server.ts`。脚本幂等，可重复执行；首次运行将在原文件同目录生成 `.bak` 备份。
 
 ```bash
-# mac / Linux
+# macOS / Linux
 python3 1-message-split/apply.py \
   ~/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/telegram/server.ts
+```
 
+```powershell
 # Windows PowerShell
 python 1-message-split\apply.py "$env:USERPROFILE\.claude\plugins\marketplaces\claude-plugins-official\external_plugins\telegram\server.ts"
 ```
 
-会生成同目录的 `server.ts.bak` 备份。脚本幂等可以反复跑。
+### 第二步：开启功能开关
 
-**第二步**：bot 的 `access.json`（一般在 `~/.claude/<bot 名>/access.json`）加两个字段：
+在 bot 的 `access.json`（路径通常为 `~/.claude/<bot 名>/access.json`）中追加以下字段：
 
 ```json
 {
@@ -49,26 +57,42 @@ python 1-message-split\apply.py "$env:USERPROFILE\.claude\plugins\marketplaces\c
 }
 ```
 
-`paragraphDelay` 是段间毫秒等待（期间显示"正在输入..."），400-800 之间随你。设 0 就立即连发。
+`paragraphDelay` 为段间等待时间，单位毫秒，建议取值 400 至 800 之间。设为 0 时段落连续发出，不显示输入状态。
 
-最后在 bot 的 CLAUDE.md 提醒 claude 怎么写：
+### 第三步：补充 prompt 规则
+
+在 bot 的 `CLAUDE.md` 末尾追加以下内容，约束 claude 的回复格式：
 
 ```markdown
-回复用空行分段，每段 < 30 字，最多 3-5 段，一次 reply 调用发完。
+回复以空行分段，每段不超过 30 字，单次最多 3 至 5 段，使用一次 reply 调用完成。
 ```
 
-重启 bot 就能看到效果。
+完成后重启 bot 使配置生效。
 
-## 卸
+# 使用
 
-`bash 1-message-split/revert.sh /path/to/server.ts`，或者把 `splitOnParagraph` 改回 false。
+## 调用方式
 
-## 不工作怎么办
+补丁仅修改服务端行为，不引入新的工具或参数。claude 写入 reply 时只需注意以空行分隔语义独立的段落即可，server 会自动拆分发送。
 
-`apply.py` 跑完输出 `no changes (already patched)` 是正常的，已经打过了。
+## 卸载
 
-消息还是一整条 → 检查 access.json 有没有写 `splitOnParagraph: true`，bot 重启了没。
+```bash
+bash 1-message-split/revert.sh /path/to/server.ts
+```
 
-报 `error: ... not found` → server.ts 路径写错了。
+或在 `access.json` 中将 `splitOnParagraph` 设为 `false` —— 后者无需还原 server.ts 即可关闭功能。
 
-官方 plugin 升级后 patch 失效 → 上游字符串可能变了，本 patch 是字符串匹配的。提 issue 或者自己改 apply.py 里的 selector。
+## 故障排查
+
+**输出为 `no changes (already patched)`**。表示补丁已应用，非异常。
+
+**消息仍以单条形式发出**。检查 access.json 中是否正确写入 `splitOnParagraph: true`，以及 bot 是否已完成重启。
+
+**报错 `error: ... not found`**。server.ts 路径错误，请核对官方 plugin 的实际安装位置。
+
+**plugin 升级后补丁失效**。上游字符串可能已变更。本补丁依赖字符串匹配，对版本敏感，可在 issue 中反馈或自行修改 `apply.py` 中的 selector。
+
+# 开源协议
+
+本模块作为 [Claude TG Patch](../) 的一部分发布，采用 [MIT License](../LICENSE)。
