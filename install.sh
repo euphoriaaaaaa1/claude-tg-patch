@@ -9,24 +9,27 @@
 #
 # macOS / Linux 通用。Windows 用 Git Bash 或 WSL 跑同一脚本即可。
 
-set -euo pipefail
+set -uo pipefail
 
-# ═══════════════════════ USER CONFIG（只改这一段） ═══════════════════════
+# ═══════════════════════ USER CONFIG ═══════════════════════
+# 两种填法（任选其一）：
+#   A. 直接编辑下面变量
+#   B. 从环境变量传入（每个变量用 "${VAR:-}" 写法已支持），例：
+#      NOVELAI_TOKEN=pst-xxx FISH_AUDIO_KEY=fa-xxx ... bash install.sh
 
-# ── 必填（如果你装对应模块）──
-NOVELAI_TOKEN=""           # NovelAI 持久 token，从 novelai.net Account → Get Persistent API Token
-FISH_AUDIO_KEY=""          # Fish Audio API key，fish.audio → API → Generate Key
-FISH_VOICE_ID=""           # 你在 fish.audio 选好的音色 id（详情页 URL 末段）
-TELEGRAM_BOT_TOKEN=""      # @BotFather 给的 1234567890:AA... 形式 token
-BOT_NAME=""                # 你 bot 在 ~/.claude/ 下的目录名，如 mybot
+NOVELAI_TOKEN="${NOVELAI_TOKEN:-}"           # NovelAI 持久 token: novelai.net → Account → Get Persistent API Token
+FISH_AUDIO_KEY="${FISH_AUDIO_KEY:-}"         # Fish Audio API key: fish.audio → API → Generate Key
+FISH_VOICE_ID="${FISH_VOICE_ID:-}"           # Fish Audio 音色 id: fish.audio 详情页 URL 末段
+TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}" # @BotFather 给的 1234567890:AA... 形式 token
+BOT_NAME="${BOT_NAME:-}"                     # 你 bot 在 ~/.claude/ 下的目录名，如 mybot
 
-# ── 可选（一般不用改）──
-TELEGRAM_PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/telegram"
+# 可选
+TELEGRAM_PLUGIN_DIR="${TELEGRAM_PLUGIN_DIR:-$HOME/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/telegram}"
 
-# ── 装哪些模块（true / false）──
-INSTALL_MESSAGE_SPLIT=true
-INSTALL_NOVELAI=true
-INSTALL_VOICE_BRIDGE=true   # ⚠️ 第一次装会下 ~1GB SenseVoice 模型，慢
+# 模块开关
+INSTALL_MESSAGE_SPLIT="${INSTALL_MESSAGE_SPLIT:-true}"
+INSTALL_NOVELAI="${INSTALL_NOVELAI:-true}"
+INSTALL_VOICE_BRIDGE="${INSTALL_VOICE_BRIDGE:-true}"   # ⚠️ 首次装会下 ~1GB 模型
 
 # ═════════════════════════════════════════════════════════════════════════
 # 下面别动
