@@ -36,7 +36,7 @@
 
 **Fish Audio 密钥与音色 id**（仅"收发语音"模块需要）。访问 [fish.audio](https://fish.audio) 注册账号并完成充值（按合成的字符数计费，几美元可用很久）。在右上角菜单进入 API 页面，生成密钥并保存。在主页 voice library 中试听并选定一个音色，详情页 URL 末段即为音色 id（例如 `https://fish.audio/m/<这一段就是音色 id>`），同样保存。
 
-**NovelAI 账号与密钥**（仅"画图"模块需要）。NovelAI 官方支付渠道在国内使用受限，建议在淘宝（即"某宝"）搜索"NovelAI 订阅"或"NovelAI 高级账号"购买现成账号。订阅档位需为 Tablet（每月 15 美元）或更高，免费档位不提供图像生成。Tablet 档每月可生成约 100 至 150 张图。
+**NovelAI 账号与密钥**（仅"画图"模块需要）。
 
 获得账号后登录 [novelai.net](https://novelai.net)，需要在 Account 设置中获取持久 API 密钥（persistent API token）。**具体点击路径直接询问淘宝商家即可**——卖你账号的商家有现成的图文步骤。最终拿到的密钥形如 `pst-...`，保存留存。
 
