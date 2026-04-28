@@ -2,45 +2,51 @@
 
 # 简介
 
-## 项目概述
+## 项目用途
 
-本仓库为 [Claude Code](https://docs.claude.com/en/docs/claude-code) 官方的 telegram plugin 提供三项扩展，分别处理消息分段发送、语音的双向收发，以及由 NovelAI 完成的图像生成与发送。三个模块相互独立，可按需启用其中任意一个或多个。
+为 Claude Code 官方的 [Telegram 插件](https://docs.claude.com/en/docs/claude-code) 增加三项功能：消息分段发送、收发语音消息、由 NovelAI 生成并发送图片。三项功能彼此独立，可按需选装其中一个或多个。
 
-代码源自一个长期运行于本地的 Telegram 多 bot 系统，剔除私有人设、密钥与路径后开源。本项目为单机自用工程，不包含自动化部署、多租户支持与持续集成。
+代码源自一个长期运行的本地多 bot 系统，去除私人内容后开源。属单机自用工程，不包含自动化部署或多用户支持。
 
-## 模块组成
+## 三项功能
 
-- **[1-message-split](./1-message-split/)** —— 在官方 reply 工具的回复链路中插入分段逻辑：claude 在文本中以空行划分段落，server 据此拆分为多条独立 Telegram 消息逐条发出，段间可加入"对方正在输入..."提示，模拟自然的对话节奏。
+**消息分段**（[1-message-split](./1-message-split/)）。官方插件默认每次回复发出一条完整长消息，看起来比较机械。装上本模块后，Claude 在回复中以空行划分段落，插件会将其拆分为多条独立 Telegram 消息逐条发出，段与段之间还能显示"对方正在输入..."提示，更接近真人聊天节奏。
 
-- **[2-voice-bridge](./2-voice-bridge/)** —— 提供语音消息的双向桥接。入站方向调用本地部署的 SenseVoice 模型完成语音转文字（含情绪识别），出站方向调用 Fish Audio S2 接口完成文字转语音。
+**收发语音**（[2-voice-bridge](./2-voice-bridge/)）。两个方向均支持。
 
-- **[3-skill-novelai](./3-skill-novelai/)** —— 一个 Claude Code 用户级 skill。claude 在判断用户希望接收图像时，自行选择图片比例、撰写英文 prompt、调用 NovelAI 生成图像并通过 Telegram 发送。续图请求会自动复用上一张的 seed，以保持场景一致性。
+- 收：用户向 bot 发送 Telegram 语音消息时，本地部署的 SenseVoice 模型自动将其转写为中文文字，并附带情绪识别结果（开心、悲伤、愤怒等）一并交给 Claude
+- 发：Claude 回复时若标记为语音输出，本地服务会调用 Fish Audio 的语音合成接口生成音频，再通过 Telegram 发回
+
+**画图发图**（[3-skill-novelai](./3-skill-novelai/)）。一个 Claude 用户级技能（skill），让 Claude 在判断用户希望接收图像时，自行选择合适的图片比例（自拍用竖屏、远景用横屏）、撰写英文 prompt、调用 NovelAI 生成图像并发送。续图请求会自动复用上一张的随机种子（seed），使房间陈设、灯光等保持一致。
 
 # 安装
 
-## 环境要求
+## 前置要求
 
-- 已安装 Claude Code CLI 并完成登录（`claude /login`）
-- 已部署官方 telegram plugin 且能正常收发文本消息
-- Python 3.10 或以上版本
-- Bun（telegram plugin 自身依赖）
-- 操作系统：macOS、Linux 或 Windows（Windows 建议使用 Git Bash 或 WSL）
+- 已安装 Claude Code 命令行工具，并完成登录（`claude /login`）
+- 已部署官方 Telegram 插件，bot 能正常收发文字消息
+- 系统已安装 Python（3.10 或以上版本）和 Bun
+- 操作系统：macOS、Linux 或 Windows 均可
 
-## 凭证准备
+## 准备 API 密钥
 
-根据所启用模块的不同，需要预先获取相应的 API 凭证。
+按照所选模块的不同，需要预先获取相应的密钥（API key），用于调用第三方服务。
 
-**Telegram bot token**。若已运行官方 telegram plugin，沿用现有 token 即可；否则在 Telegram 中向 [@BotFather](https://t.me/BotFather) 发送 `/newbot` 命令，按引导创建 bot 并保存返回的 token。
+**Telegram bot token**。已在使用官方 Telegram 插件的话，沿用现有 token 即可。否则在 Telegram 中搜索 [@BotFather](https://t.me/BotFather)，向其发送 `/newbot` 命令，按引导创建 bot，最后会获得形如 `1234567890:AAH...` 的 token，请妥善保存。
 
-**Fish Audio API key 与音色 id**（仅 voice-bridge 需要）。访问 [fish.audio](https://fish.audio) 完成注册并充值，S2 模型按字符计费。在右上角菜单进入 API 页面生成 key。音色在主页 voice library 选择，详情页 URL 末段即为音色 id。
+**Fish Audio 密钥与音色 id**（仅"收发语音"模块需要）。访问 [fish.audio](https://fish.audio) 注册账号并完成充值（按合成的字符数计费，几美元可用很久）。在右上角菜单进入 API 页面，生成密钥并保存。在主页 voice library 中试听并选定一个音色，详情页 URL 末段即为音色 id（例如 `https://fish.audio/m/<这一段就是音色 id>`），同样保存。
 
-**NovelAI 凭证**（仅 novelai-skill 需要）。NovelAI 官方支付渠道在国内使用受限，建议在某宝（淘宝）搜索"NovelAI 订阅"或类似关键词购买现成账号，订阅档位需为 Tablet（$15/月）或更高。
+**NovelAI 账号与密钥**（仅"画图"模块需要）。NovelAI 官方支付渠道在国内使用受限，建议在淘宝（即"某宝"）搜索"NovelAI 订阅"或"NovelAI 高级账号"购买现成账号。订阅档位需为 Tablet（每月 15 美元）或更高，免费档位不提供图像生成。Tablet 档每月可生成约 100 至 150 张图。
 
-获得账号后登录 [novelai.net](https://novelai.net) 即可获取 persistent API token。具体操作步骤无需查阅文档——直接询问任意 AI 助手"NovelAI 怎么获取 persistent API token"，对方会指明 Account 页面下的相应入口。token 形如 `pst-...`，复制留存。
+获得账号后登录 [novelai.net](https://novelai.net)。**获取密钥的具体路径无需查阅文档**——直接复制下面这句话询问任意 AI 助手即可：
 
-## 一键脚本
+> NovelAI 怎么获取 persistent API token
 
-将上述凭证填入命令对应位置后执行：
+AI 会指明 Account 设置中的对应入口。最终拿到的密钥形如 `pst-...`，保存留存。
+
+## 一键安装
+
+将上述密钥填入命令对应位置后，在终端中执行：
 
 ```bash
 git clone https://github.com/euphoriaaaaaa1/claude-tg-patch.git ~/projects/claude-tg-patch
@@ -54,43 +60,48 @@ BOT_NAME="你 bot 在 ~/.claude/channels/ 下的目录名" \
 bash install.sh
 ```
 
-脚本依次完成：补丁打入 telegram plugin、novelai-skill 拷贝至用户级 skill 目录并写入凭证、voice-bridge 创建 Python 虚拟环境并启动 HTTP 服务（首次运行下载 SenseVoice 模型约 1GB）。
+`BOT_NAME` 填写 bot 配置目录的名字。例如 bot 的配置文件位于 `~/.claude/channels/bot2/`，则填 `bot2`。
 
-## 手动步骤
+脚本会自动完成的事项：
 
-以下三项配置涉及对用户已有 JSON 文件的合并，自动化处理可能造成既有内容丢失，因此需手动完成。脚本结束时会按当前路径精确打印待粘贴的内容。
+- 为官方 Telegram 插件应用补丁（添加分段发送和语音参数支持）
+- 在系统中安装"画图"技能并写入 NovelAI 密钥
+- 创建独立的 Python 环境（不会影响系统 Python），下载语音识别模型（约 1GB，首次较慢）
+- 启动本地语音服务
+- 在 bot 的 `CLAUDE.md` 末尾追加相关使用规则（仅追加，不修改原有内容）
 
-1. 在 bot 的 `access.json` 中追加 `splitOnParagraph`、`paragraphDelay`、`voiceId` 三个字段。
-2. 在 bot 的 `.mcp.json` 中合并 voice-bridge 的 MCP server 注册项。
-3. 在 bot 的 `CLAUDE.md` 末尾追加发图与语音相关的提示词。
+## 仍需手动完成的步骤
 
-完成上述配置后重启 bot 即可生效。
+部分配置涉及对 bot 已有 JSON 文件的合并，自动处理可能覆盖你已写过的内容，因此需要手动操作。脚本结束时会精确打印待粘贴的内容。
+
+1. 在 bot 的 `access.json` 中追加几个配置字段（控制分段开关、语音音色等）
+2. 在 bot 的 `.mcp.json` 中追加一段 MCP 服务配置（MCP 是 Claude 调用外部工具的标准协议，这里登记的是本地语音服务的位置）
+
+按打印提示复制粘贴即可。改完重启 bot（结束其进程令其自动重启）使配置生效。
 
 # 使用
 
-## 模块协同效果
-
-三个模块同时启用后，Telegram 端的对话表现示例如下。
+## 装完之后的对话效果
 
 ```
-用户：在干嘛
-bot ：在床上躺着            ← 三条独立消息，段间停顿约 600ms
-      你呢
-      刚还在想你
+你：在干嘛
+bot：在床上躺着            ← 三条独立消息，段间停顿约 600 毫秒
+     你呢
+     刚还在想你
 
-用户：（语音）我有点累
-bot ：识别为 SAD 情绪 → 生成回复并以语音形式发出
+你：（发语音）我有点累
+bot：识别为 SAD 情绪 → 安慰回复 + 同时以语音形式发出
 
-用户：来张自拍
-bot ：自动选择 portrait 比例（832×1216），调用 NovelAI 生成图像并发送
+你：来张自拍
+bot：自动选择竖屏 832×1216，调用 NovelAI 生成图像并发送
 
-用户：再来一张换个角度
-bot ：复用上一张 seed，保持房间与光照一致，仅替换姿态
+你：再来一张换个角度
+bot：保留同一房间和床，仅替换姿态
 ```
 
-## 模块详细说明
+## 各模块详细说明
 
-各模块的调用方式、参数说明、调试技巧详见对应目录下的 README。
+每个模块在自己的目录下有独立 README，覆盖手动安装、参数调整、故障排查等：
 
 - [1-message-split/README.md](./1-message-split/README.md)
 - [2-voice-bridge/README.md](./2-voice-bridge/README.md)
@@ -98,12 +109,12 @@ bot ：复用上一张 seed，保持房间与光照一致，仅替换姿态
 
 ## 已知限制
 
-官方 telegram plugin 升级时若内部字符串发生变更，本仓库的 patch 脚本可能失效。该 patch 基于 server.ts 的字符串匹配，对上游版本敏感。如遇此情况，欢迎在 issue 中反馈或提交修复。
+官方 Telegram 插件如果发布大版本更新，本仓库的补丁脚本可能失效——补丁通过匹配源代码中的字符串实现，对官方版本敏感。遇此情况欢迎在 issue 中反馈或自行修改脚本中的匹配位置。
 
 Fish Audio 与 NovelAI 均为收费服务，账号与额度需自行准备。
 
-claude CLI 的 OAuth token 长期续期问题（worker 进程环境变量冻结导致的 401 等情形）超出本仓库范围，需另行解决。
+Claude Code 自身的登录凭证长期续期问题（运行一段时间后突然 401 之类）不在本仓库覆盖范围内。
 
 # 开源协议
 
-本项目采用 [MIT License](./LICENSE)。详见 LICENSE 文件。
+本项目采用 [MIT 协议](./LICENSE)。简言之：可任意使用、修改、分发，作者不对使用结果负责。
