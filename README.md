@@ -38,11 +38,7 @@
 
 **NovelAI 账号与密钥**（仅"画图"模块需要）。NovelAI 官方支付渠道在国内使用受限，建议在淘宝（即"某宝"）搜索"NovelAI 订阅"或"NovelAI 高级账号"购买现成账号。订阅档位需为 Tablet（每月 15 美元）或更高，免费档位不提供图像生成。Tablet 档每月可生成约 100 至 150 张图。
 
-获得账号后登录 [novelai.net](https://novelai.net)。**获取密钥的具体路径无需查阅文档**——直接复制下面这句话询问任意 AI 助手即可：
-
-> NovelAI 怎么获取 persistent API token
-
-AI 会指明 Account 设置中的对应入口。最终拿到的密钥形如 `pst-...`，保存留存。
+获得账号后登录 [novelai.net](https://novelai.net)，需要在 Account 设置中获取持久 API 密钥（persistent API token）。**具体点击路径直接询问淘宝商家即可**——卖你账号的商家有现成的图文步骤。最终拿到的密钥形如 `pst-...`，保存留存。
 
 ## 一键安装
 
