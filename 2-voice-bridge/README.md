@@ -110,7 +110,7 @@ curl http://127.0.0.1:7788/health   # 应返回 {"ok": true, ...}
 ### 第七步：同步 prompt 模板
 
 ```bash
-.venv/bin/python sync_snippet.py ~/.claude/<bot 名>/CLAUDE.md
+.venv/bin/python sync_snippet.py ~/.claude/channels/<bot 名>/CLAUDE.md
 ```
 
 将 voice-bridge 相关的提示词追加至 bot 的 CLAUDE.md（以 HTML 注释包裹，可重复执行覆盖更新）。
@@ -135,7 +135,7 @@ notepad .env
 
 ```powershell
 .venv\Scripts\python.exe apply_patch.py "$env:USERPROFILE\.claude\plugins\marketplaces\claude-plugins-official\external_plugins\telegram\server.ts"
-.venv\Scripts\python.exe sync_snippet.py "$env:USERPROFILE\.claude\<bot 名>\CLAUDE.md"
+.venv\Scripts\python.exe sync_snippet.py "$env:USERPROFILE\.claude\channels\<bot 名>\CLAUDE.md"
 ```
 
 `mcp-snippet.json` 中路径改为 Windows 绝对路径形式（注意双反斜杠）：

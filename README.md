@@ -50,7 +50,7 @@ NOVELAI_TOKEN="pst-..." \
 FISH_AUDIO_KEY="fa-..." \
 FISH_VOICE_ID="..." \
 TELEGRAM_BOT_TOKEN="..." \
-BOT_NAME="你 bot 在 ~/.claude/ 下的目录名" \
+BOT_NAME="你 bot 在 ~/.claude/channels/ 下的目录名" \
 bash install.sh
 ```
 

@@ -48,7 +48,7 @@ python 1-message-split\apply.py "$env:USERPROFILE\.claude\plugins\marketplaces\c
 
 ### 第二步：开启功能开关
 
-在 bot 的 `access.json`（路径通常为 `~/.claude/<bot 名>/access.json`）中追加以下字段：
+在 bot 的 `access.json`（路径通常为 `~/.claude/channels/<bot 名>/access.json`）中追加以下字段：
 
 ```json
 {
@@ -61,7 +61,7 @@ python 1-message-split\apply.py "$env:USERPROFILE\.claude\plugins\marketplaces\c
 
 ### 第三步：补充 prompt 规则
 
-通过项目根目录 `install.sh` 安装时本步骤已自动完成（注入 `CLAUDE-snippet.md` 至 `~/.claude/<bot>/CLAUDE.md`）。
+通过项目根目录 `install.sh` 安装时本步骤已自动完成（注入 `CLAUDE-snippet.md` 至 `~/.claude/channels/<bot>/CLAUDE.md`）。
 
 如选择手动安装，将 [`CLAUDE-snippet.md`](./CLAUDE-snippet.md) 整段内容追加至 bot 的 `CLAUDE.md` 末尾即可。其内容约束 claude 的回复格式（空行分段、段落数量与长度限制等）。
 

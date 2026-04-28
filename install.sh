@@ -21,7 +21,7 @@ NOVELAI_TOKEN="${NOVELAI_TOKEN:-}"           # NovelAI 持久 token: novelai.net
 FISH_AUDIO_KEY="${FISH_AUDIO_KEY:-}"         # Fish Audio API key: fish.audio → API → Generate Key
 FISH_VOICE_ID="${FISH_VOICE_ID:-}"           # Fish Audio 音色 id: fish.audio 详情页 URL 末段
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}" # @BotFather 给的 1234567890:AA... 形式 token
-BOT_NAME="${BOT_NAME:-}"                     # 你 bot 在 ~/.claude/ 下的目录名，如 mybot
+BOT_NAME="${BOT_NAME:-}"                     # 你 bot 在 ~/.claude/channels/ 下的目录名，如 bot2
 
 # 可选
 TELEGRAM_PLUGIN_DIR="${TELEGRAM_PLUGIN_DIR:-$HOME/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/telegram}"
@@ -57,10 +57,10 @@ inject_snippet() {
 }
 
 # 校验
-[ -z "$BOT_NAME" ] && fail "BOT_NAME 必填（你 bot 在 ~/.claude/ 下的目录名）"
+[ -z "$BOT_NAME" ] && fail "BOT_NAME 必填（你 bot 在 ~/.claude/channels/ 下的目录名）"
 [ ! -f "$TELEGRAM_PLUGIN_DIR/server.ts" ] && \
   fail "找不到 telegram plugin server.ts: $TELEGRAM_PLUGIN_DIR/server.ts。装好官方 telegram plugin 再来"
-BOT_DIR="$HOME/.claude/$BOT_NAME"
+BOT_DIR="$HOME/.claude/channels/$BOT_NAME"
 [ ! -d "$BOT_DIR" ] && warn "$BOT_DIR 不存在，等下打印的"下一步"步骤需要你确认 bot 目录在哪"
 
 # ─── 模块 1: message-split ──────────────────────────────────────────────

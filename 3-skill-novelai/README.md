@@ -49,7 +49,7 @@ Claude CLI 在启动时自动扫描 `~/.claude/skills/` 目录，无需额外注
 
 ### 配置 bot 调用
 
-通过项目根目录 `install.sh` 安装时本步骤已自动完成（注入 [`CLAUDE-snippet.md`](./CLAUDE-snippet.md) 至 `~/.claude/<bot>/CLAUDE.md`）。
+通过项目根目录 `install.sh` 安装时本步骤已自动完成（注入 [`CLAUDE-snippet.md`](./CLAUDE-snippet.md) 至 `~/.claude/channels/<bot>/CLAUDE.md`）。
 
 如选择手动安装，将 `CLAUDE-snippet.md` 整段内容追加至 bot 的 `CLAUDE.md` 末尾即可。其内容包含调用约束、`--ratio` 选择规则、续图触发条件等。
 
